@@ -1,0 +1,128 @@
+---
+title: "GDSC analysis"
+output: html_notebook
+author: "Bernard Lee"
+date: "2020-06-16"
+editor_options: 
+  chunk_output_type: inline
+---
+
+#### Load library
+```{r}
+library(tidyverse)
+```
+
+#### Load GDSC1000 data
+```{r}
+GDSC1000 <- read.delim("/Volumes/bernard_MacBook/Projects/2020/NEW/GDSC2/GDSC1000_GE_original_collapsed_edited_WC.txt", row.names = 1, check.names = FALSE)
+```
+
+#### Load GDSC1 data
+```{r}
+# GDSC1
+GDSC1 <- read_csv("~/OneDrive - Cancer Research Malaysia/GDSC2_July2019/GDSC2020/GDSC2020/GDSC2020/Data/GDSC1/PANCANCER_GDSC1_2020.csv")
+
+# Remove blood lines
+GDSC1_clean <- GDSC1 %>%
+  filter(Tissue != "blood")
+
+# anti natural log of IC50
+GDSC1_clean$IC50_raw <- exp(GDSC1_clean$IC50)
+names(GDSC1_clean)[1] <- "DrugName"
+
+GDSC1_drugs <- as.data.frame(unique(GDSC1_clean$DrugName))
+names(GDSC1_drugs) <- "DrugName"
+GDSC1_drugs$GDSC1_version <- "GDSC1"
+
+# Count lines
+bucket <- as.vector(1:nrow(GDSC1_drugs), mode = "numeric")
+for (i in 1:nrow(GDSC1_drugs)) {
+  bucket[i] <- sum(GDSC1_clean$DrugName == GDSC1_drugs$DrugName[i])
+}
+GDSC1_drugs$GDSC1_Lines <- bucket
+
+# Count lines < 1 uM
+less_than_1 <- as.vector(1:nrow(GDSC1_drugs), mode = "numeric")
+min_IC50 <- as.vector(1:nrow(GDSC1_drugs), mode = "numeric")
+more_than_10 <- as.vector(1:nrow(GDSC1_drugs), mode = "numeric")
+max_IC50 <- as.vector(1:nrow(GDSC1_drugs), mode = "numeric")
+
+for (i in 1:nrow(GDSC1_drugs)) {
+  trial <- GDSC1_clean %>%
+    filter(DrugName == GDSC1_drugs$DrugName[i])
+  less_than_1[i] <- sum(trial$IC50_raw < 1)
+  min_IC50[i] <- min(trial$IC50_raw)
+  more_than_10[i] <- sum(trial$IC50_raw > 10)
+  max_IC50[i] <- max(trial$IC50_raw)
+}
+GDSC1_drugs$less_than_1 <- less_than_1
+GDSC1_drugs$Min_IC50 <- min_IC50
+GDSC1_drugs$more_than_10 <- more_than_10
+GDSC1_drugs$Max_IC50 <- max_IC50
+
+write_delim(GDSC1_drugs, "~/OneDrive - Cancer Research Malaysia/GDSC2_July2019/GDSC2020/GDSC2020/GDSC2020/Output/GDSC1_details_trial.txt", delim = "\t")
+```
+
+#### Load GDSC2 data
+```{r}
+# GDSC2
+GDSC2 <- read_csv("~/OneDrive - Cancer Research Malaysia/GDSC2_July2019/GDSC2020/GDSC2020/GDSC2020/Data/GDSC2/PANCANCER_GDSC2_2020.csv")
+
+# Remove blood lines
+GDSC2_clean <- GDSC2 %>%
+  filter(Tissue != "blood")
+
+# anti natural log of IC50
+GDSC2_clean$IC50_raw <- exp(GDSC2_clean$IC50)
+names(GDSC2_clean)[1] <- "DrugName"
+
+GDSC2_drugs <- as.data.frame(unique(GDSC2_clean$DrugName))
+names(GDSC2_drugs) <- "DrugName"
+GDSC2_drugs$GDSC2_version <- "GDSC2"
+
+# Count lines
+bucket <- as.vector(1:nrow(GDSC2_drugs), mode = "numeric")
+
+for (i in 1:nrow(GDSC2_drugs)) {
+  bucket[i] <- sum(GDSC2_clean$DrugName == GDSC2_drugs$DrugName[i])
+}
+GDSC2_drugs$GDSC2_Lines <- bucket
+
+# Count lines < 1 uM
+less_than_1 <- as.vector(1:nrow(GDSC2_drugs), mode = "numeric")
+min_IC50 <- as.vector(1:nrow(GDSC2_drugs), mode = "numeric")
+more_than_10 <- as.vector(1:nrow(GDSC2_drugs), mode = "numeric")
+max_IC50 <- as.vector(1:nrow(GDSC2_drugs), mode = "numeric")
+
+for (i in 1:nrow(GDSC2_drugs)) {
+  trial <- GDSC2_clean %>%
+    filter(DrugName == GDSC2_drugs$DrugName[i])
+  less_than_1[i] <- sum(trial$IC50_raw < 1)
+  min_IC50[i] <- min(trial$IC50_raw)
+  more_than_10[i] <- sum(trial$IC50_raw > 10)
+  max_IC50[i] <- max(trial$IC50_raw)
+}
+GDSC2_drugs$less_than_1 <- less_than_1
+GDSC2_drugs$Min_IC50 <- min_IC50
+GDSC2_drugs$more_than_10 <- more_than_10
+GDSC2_drugs$Max_IC50 <- max_IC50
+
+write_delim(GDSC2_drugs, "~/OneDrive - Cancer Research Malaysia/GDSC2_July2019/GDSC2020/GDSC2020/GDSC2020/Output/GDSC2_details.txt", delim = "\t")
+
+
+
+
+
+
+
+
+
+
+
+```
+
+#### GDSC1 & GDSC2 drugs combined
+```{r}
+GDSC_drugs_combi <- full_join(GDSC1_drugs, GDSC2_drugs)
+```
+
